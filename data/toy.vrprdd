@@ -1,0 +1,12 @@
+A-n32-k5
+
+VEHICLE
+NUMBER	CAPACITY
+5	100
+
+CUSTOMER
+CUST NO.  XCOORD    YCOORD    DEMAND    RELEASE TIME  DUE TIME  DEADLINE TIME PENALTY
+0         82        76        0         0             720       720           0
+1         96        44        19        90            140       180           20
+2         50        5         99        120           450       460           20
+3         49        8         1         150           420       450           20
