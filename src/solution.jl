@@ -11,7 +11,7 @@ mutable struct Solution
 end
 
 
-# build Solution from the variables x
+# build Solution from the variables x and y
 function getsolution(data::DataVRPRDD, x, y, objval, optimizer)
 
    A, dim = arcs(data), n(data)+1

@@ -9,8 +9,9 @@ function build_model(data::DataVRPRDD, app)
    @variable(vrprd.formulation, x[a in A], Int)
    @variable(vrprd.formulation, y[a in A], Int)
 
-   @objective(vrprd.formulation, Min, sum(c(data,a) * x[a] for a in A))
-   #@objective(vrprd.formulation, Min, (sum(c(data,a) * x[a] for a in A)) + (sum((c(data,a)+penalty(data,a[2])) * y[a]) for a in A))
+   #@objective(vrprd.formulation, Min, sum(c(data,a) * x[a] for a in A))
+   
+   @objective(vrprd.formulation, Min, sum((c(data,a) * x[a]) + ((c(data,a)+penalty(data,a[2])) * y[a]) for a in A) )
    @constraint(vrprd.formulation, indeg[i in V], sum((x[a]+y[a]) for a in A if a[2] == i) == 1.0)
 
    println(vrprd.formulation)
@@ -54,25 +55,28 @@ function build_model(data::DataVRPRDD, app)
          if(i in V1 && j in V1)
             arc_due_id = add_arc!(G, i, j)
             add_arc_var_mapping!(G, arc_due_id, x[(i,j)])
-            set_arc_resource_bounds!(G, arc_due_id, time_res_id, release_date, due(data,j))
+            set_arc_resource_bounds!(G, arc_due_id, time_res_id, 0, due(data,j)- release_date)
             set_arc_consumption!(G, arc_due_id, time_res_id, t(data, (i, j)))
+
+            if app["enable_cap_res"]
+               set_arc_consumption!(G, arc_due_id, cap_res_id, d(data, j))
+            end
             
             if(j != 0)
                arc_dead_id = add_arc!(G, i, j)
                add_arc_var_mapping!(G, arc_dead_id, y[(i,j)])
-               set_arc_resource_bounds!(G, arc_dead_id, time_res_id, due(data,j), deadline(data,j))
+               set_arc_resource_bounds!(G, arc_dead_id, time_res_id, due(data,j) - release_date, deadline(data,j)- release_date)
                set_arc_consumption!(G, arc_dead_id, time_res_id, t(data, (i, j)))
-            end
 
-            if app["enable_cap_res"]
-               set_arc_consumption!(G, arc_due_id, cap_res_id, d(data, j))
-               set_arc_consumption!(G, arc_dead_id, cap_res_id, d(data, j))
+               if app["enable_cap_res"]
+                  set_arc_consumption!(G, arc_dead_id, cap_res_id, d(data, j))
+               end
             end
 
          elseif (j in V2 && i in vcat(V1,V2))
             arc_dead_id = add_arc!(G, i, j)
             add_arc_var_mapping!(G, arc_dead_id, y[(i,j)])
-            set_arc_resource_bounds!(G, arc_dead_id, time_res_id, due(data,j), deadline(data,j))
+            set_arc_resource_bounds!(G, arc_dead_id, time_res_id, due(data,j) - release_date, deadline(data,j) - release_date)
 
 
             if app["enable_cap_res"]
